@@ -27,7 +27,7 @@ public class DbHttpHandlerProvider {
             }
         });
 
-        server.createContext(DbHttpPaths.DB_SET, new AbstractHandler() {
+        server.createContext(DbHttpPaths.DB_PUT, new AbstractHandler() {
             @Override
             protected byte[] doHandle(HttpExchange exchange) {
                 bitCask.put(getQueryParam("key"), getRequestBody());

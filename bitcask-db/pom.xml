@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>com.abing</groupId>
-            <artifactId>common</artifactId>
+            <artifactId>bitcask-common</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
