@@ -2,15 +2,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.github.abing22333</groupId>
+        <groupId>com.abing</groupId>
         <artifactId>bitcask</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>server</artifactId>
+    <artifactId>bitcask-db</artifactId>
     <packaging>jar</packaging>
-
-    <name>BitCask-Server</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,7 +16,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.abing22333</groupId>
+            <groupId>com.abing</groupId>
             <artifactId>common</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>

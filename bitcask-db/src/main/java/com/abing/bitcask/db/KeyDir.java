@@ -1,10 +1,10 @@
-package com.github.abing22333.db;
+package com.abing.bitcask.db;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 在内存中维护key,
+ * 索引缓存
  *
  * @author abing
  * @date 2023/9/21
