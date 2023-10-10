@@ -125,17 +125,11 @@ public class Record {
     /**
      * 从buffer中解析出Record
      *
-     * @param buffer        buffer
-     * @param loadRecordLen 是否从buffer读取'记录总长度'
+     * @param buffer buffer
      * @return Record
      */
-    public static Record from(ByteBuffer buffer, boolean loadRecordLen) {
+    public static Record from(ByteBuffer buffer) {
         Record record = new Record();
-        if (loadRecordLen) {
-            // 记录的总长度
-            buffer.getInt();
-        }
-
         record.setTimestamp(buffer.getLong());
         record.setKeySize(buffer.getShort());
         record.setValueSize(buffer.getInt());
@@ -152,13 +146,4 @@ public class Record {
     }
 
 
-    /**
-     * 从buffer中解析出Record, 不会从buffer中读取记录总长度
-     *
-     * @param buffer buffer
-     * @return Record
-     */
-    public static Record from(ByteBuffer buffer) {
-        return from(buffer, false);
-    }
 }

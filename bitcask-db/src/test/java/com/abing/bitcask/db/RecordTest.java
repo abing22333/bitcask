@@ -20,9 +20,9 @@ class RecordTest {
 
         Record record = new Record("abing", "hello bitcask".getBytes());
         ByteBuffer byteBuffer = record.toByteBuffer();
-        byteBuffer.flip();
+        int recodeLen = byteBuffer.flip().getInt();
 
-        assertEquals(record.toString(), Record.from(byteBuffer, true).toString());
+        assertEquals(record.toString(), Record.from(byteBuffer).toString());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.abing.bitcask.db;
 
+import com.abing.bitcask.common.api.BitCask;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -8,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author abing
  * @date 2023/9/27
  */
-class BitCaskTest {
+class BitCaskImplTest {
 
     @Test
     void getAndPut() {
-        BitCask bitCask = new BitCask();
+        BitCask bitCask = BitCaskFactory.create();
         byte[] value1 = "value-getAndPut-001".getBytes();
         byte[] value2 = "value-getAndPut-002".getBytes();
         byte[] value3 = "value-getAndPut-003".getBytes();
@@ -21,7 +22,7 @@ class BitCaskTest {
         bitCask.put("key3", value3);
         bitCask.clear();
 
-        bitCask = new BitCask();
+        bitCask = BitCaskFactory.create();
         assertArrayEquals(value1, bitCask.get("key1"));
         assertArrayEquals(value2, bitCask.get("key2"));
         assertArrayEquals(value3, bitCask.get("key3"));
@@ -31,7 +32,7 @@ class BitCaskTest {
 
     @Test
     void delete() {
-        BitCask bitCask = new BitCask();
+        BitCask bitCask = BitCaskFactory.create();
         byte[] value1 = "value-delete-001".getBytes();
         bitCask.put("key1", value1);
         assertArrayEquals(value1, bitCask.get("key1"));

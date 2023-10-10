@@ -1,6 +1,7 @@
 package com.abing.bitcask;
 
-import com.abing.bitcask.db.BitCask;
+import com.abing.bitcask.common.api.BitCask;
+import com.abing.bitcask.db.BitCaskFactory;
 import com.abing.bitcask.httphandler.DbHttpHandlerProvider;
 import com.sun.net.httpserver.HttpServer;
 
@@ -17,7 +18,7 @@ public class BitCaskServer {
 
     public static void main(String[] args) throws IOException {
         // 创建bitCask
-        BitCask bitCask = new BitCask();
+        BitCask bitCask = BitCaskFactory.create();
 
         // 创建HTTP服务器，绑定到指定的主机和端口
         int port = 8080;
