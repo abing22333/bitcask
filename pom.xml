@@ -3,16 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.abing</groupId>
-    <artifactId>bitcask</artifactId>
+    <artifactId>raft-kv</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>BitCask</name>
     <modules>
-        <module>bitcask-common</module>
-        <module>bitcask-db</module>
-        <module>bitcask-db-client</module>
-        <module>bitcask-db-server</module>
+        <module>kv-common</module>
+        <module>kv-bitcask</module>
+        <module>raft-client</module>
+        <module>raft-server</module>
     </modules>
 
     <properties>
