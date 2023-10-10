@@ -29,9 +29,4 @@ public interface BitCask {
      * @param key key
      */
     void delete(String key);
-
-    /**
-     * 清除缓存
-     */
-    void clear();
 }

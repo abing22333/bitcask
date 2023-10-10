@@ -100,9 +100,4 @@ public class BitCaskImpl implements BitCask {
     public void delete(String key) {
         put(key, new byte[0]);
     }
-
-    @Override
-    public void clear() {
-        keyDir.clear();
-    }
 }
