@@ -1,5 +1,6 @@
 package com.abing.bitcask.client;
 
+import com.abing.bitcask.common.api.BitCask;
 import com.abing.bitcask.common.constant.DbHttpPaths;
 import com.abing.bitcask.common.exception.ServerException;
 
@@ -15,7 +16,7 @@ import java.net.http.HttpResponse;
  * @author abing
  * @date 2023/9/27
  */
-public class BitCask implements com.abing.bitcask.common.api.BitCask {
+public class BitCaskClient implements BitCask {
 
     @Override
     public byte[] get(String key) {
