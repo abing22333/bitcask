@@ -5,16 +5,17 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Logger;
 
 public abstract class AbstractHandler implements HttpHandler {
+    static Logger log = Logger.getLogger(AbstractHandler.class.getName());
 
     ThreadLocal<Map<String, List<String>>> queryParamsThreadLocal = new ThreadLocal<>();
-    ThreadLocal<byte[]> reqestBodyThreadLocal = new ThreadLocal<>();
 
     protected String getQueryParam(String key) {
 
@@ -29,15 +30,11 @@ public abstract class AbstractHandler implements HttpHandler {
                 .orElse(null);
     }
 
-    protected byte[] getRequestBody() {
-        return reqestBodyThreadLocal.get();
-    }
-
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        log.info(MessageFormat.format("from: [{0}], uri:[{1}]", exchange.getRemoteAddress(), exchange.getRequestURI()));
         parseQueryParameters(exchange.getRequestURI().getQuery());
-        parseRequestBody(exchange);
 
         byte[] bytes;
 
@@ -48,19 +45,20 @@ public abstract class AbstractHandler implements HttpHandler {
             bytes = e.getMessage().getBytes();
             exchange.sendResponseHeaders(400, bytes.length);
         } catch (Exception e) {
+            e.printStackTrace();
             bytes = "服务器异常".getBytes();
             exchange.sendResponseHeaders(500, bytes.length);
         }
 
         queryParamsThreadLocal.remove();
-        reqestBodyThreadLocal.remove();
-
-        OutputStream os = exchange.getResponseBody();
-        os.write(bytes);
-        os.close();
+        exchange.getResponseBody().write(bytes);
+        exchange.close();
     }
 
     private void parseQueryParameters(String uri) {
+        if (uri == null) {
+            return;
+        }
         String[] params = uri.split("&");
         Map<String, List<String>> queryParams = new HashMap<>(params.length);
 
@@ -76,19 +74,23 @@ public abstract class AbstractHandler implements HttpHandler {
         queryParamsThreadLocal.set(queryParams);
     }
 
-    protected void parseRequestBody(HttpExchange exchange) throws IOException {
+    protected byte[] getRequestBody(HttpExchange exchange) {
         ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
         ReadableByteChannel readableByteChannel = Channels.newChannel(exchange.getRequestBody());
-        int read = readableByteChannel.read(buffer);
+        int read = 0;
+        try {
+            read = readableByteChannel.read(buffer);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         if (read < 0) {
-            return;
+            return new byte[]{};
         }
 
         buffer.flip();
         byte[] bytes = new byte[read];
         buffer.get(bytes);
-
-        reqestBodyThreadLocal.set(bytes);
+        return bytes;
     }
 
 

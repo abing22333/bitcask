@@ -5,6 +5,7 @@ import com.abing.kv.common.api.KvDataBase;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
@@ -25,8 +26,18 @@ public class BitCaskFactory {
     }
 
     private static FileChannel openFile(String fileName) throws IOException {
-        return FileChannel.open(Paths.get(fileName), StandardOpenOption.READ);
+        Path path = Paths.get(fileName);
+        if (!path.toFile().exists()){
+            boolean newFile = path.toFile().createNewFile();
+            if (!newFile){
+                throw  new RuntimeException("cannot create file: " + fileName);
+            }
+        }
+
+        return FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.CREATE);
     }
+
+
 
     private static void initKeyDir(KeyDir keyDir, String fileName) throws IOException {
         try (FileChannel channel = openFile(fileName)) {

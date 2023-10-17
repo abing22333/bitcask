@@ -7,31 +7,39 @@ import java.io.*;
  */
 public class SerializationUtil {
 
-    public static byte[] serialize(Object obj) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        serialize(out, obj);
-        return out.toByteArray();
+    public static byte[] serialize(Object obj) throws RuntimeException {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            serialize(out, obj);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
-    public static void serialize(OutputStream out, Object obj) throws IOException {
-        ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(out));
-        os.writeObject(obj);
-        os.flush();
+    public static void serialize(OutputStream out, Object obj) throws RuntimeException {
+
+        try {
+            ObjectOutputStream os = new ObjectOutputStream(out);
+
+            os.writeObject(obj);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static <T> T deserialize(byte[] data) throws IOException {
+    public static <T> T deserialize(byte[] data) throws RuntimeException {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
 
         return deserialize(in);
     }
 
-    public static <T> T deserialize(InputStream inputStream) throws IOException {
+    public static <T> T deserialize(InputStream inputStream) throws RuntimeException {
 
-        ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(inputStream));
         try {
+            ObjectInputStream is = new ObjectInputStream(inputStream);
             return (T) is.readObject();
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | IOException e) {
             throw new RuntimeException(e);
         }
     }

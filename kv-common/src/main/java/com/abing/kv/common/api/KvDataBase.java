@@ -7,6 +7,7 @@ package com.abing.kv.common.api;
  * @date 2023/9/26
  */
 public interface KvDataBase {
+
     /**
      * 查询数据
      *
