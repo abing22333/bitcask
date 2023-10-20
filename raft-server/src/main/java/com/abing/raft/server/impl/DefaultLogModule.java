@@ -1,11 +1,14 @@
 package com.abing.raft.server.impl;
 
 import com.abing.kv.bitcask.BitCaskFactory;
-import com.abing.kv.common.api.KvDataBase;
+import com.abing.kv.bitcask.KvDataBase;
+import com.abing.raft.client.SerializationUtil;
 import com.abing.raft.server.LogModule;
 import com.abing.raft.server.entity.LogEntry;
+import org.apache.commons.collections4.CollectionUtils;
 
-import java.nio.ByteBuffer;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -15,43 +18,71 @@ import java.util.List;
 public class DefaultLogModule implements LogModule {
     KvDataBase bitCask = BitCaskFactory.create();
 
-    private final static String LastIndexKey = "LastIndexKey";
+
+    private String getKey(long key) {
+        return "log:" + key;
+    }
 
 
     @Override
-    public long lastIndex() {
-        byte[] bytes = bitCask.get(LastIndexKey);
-        if (bytes == null || bytes.length == 0){
-            return 0;
+    public Long getLastIndex() {
+        if (!bitCask.hasKey(getKey(1))) {
+            return 0L;
         }
 
-        return ByteBuffer.wrap(bytes).getLong();
+        long l = 1, r = Long.MAX_VALUE - 2, mid;
+
+        while (l < r) {
+            mid = (l + r + 1) / 2;
+            if (bitCask.hasKey(getKey(mid))) {
+                l = mid;
+            } else {
+                r = mid - 1;
+            }
+        }
+
+        return l;
     }
 
-
-
-    @Override
-    public LogEntry getLast() {
-        return null;
-    }
 
     @Override
     public LogEntry getLogEntry(long index) {
-        return null;
+        byte[] bytes = bitCask.get(getKey(index));
+        return SerializationUtil.deserialize(bytes);
     }
 
     @Override
-    public void write(LogEntry logEntry) {
+    public List<LogEntry> getLogEntry(long startIndex, long endIndex) {
+        List<LogEntry> logEntries = new ArrayList<>((int) (endIndex - startIndex));
 
+        while (startIndex <= endIndex) {
+            LogEntry logEntry = getLogEntry(startIndex++);
+            if (logEntry == null) {
+                throw new RuntimeException(MessageFormat.format("index[{0}] is null", startIndex));
+            }
+            logEntries.add(logEntry);
+        }
+        return logEntries;
     }
 
     @Override
-    public void write(List<LogEntry> logEntry) {
+    public Long append(List<LogEntry> logEntries) {
+        if (CollectionUtils.isEmpty(logEntries)) {
+            return null;
+        }
+        long index = 0;
 
+        for (LogEntry logEntry : logEntries) {
+            index = logEntry.getIndex();
+            bitCask.put(getKey(index), SerializationUtil.serialize(logEntry));
+        }
+        return index;
     }
 
     @Override
-    public void removeOnStartIndex(long index) {
-
+    public void remove(long startIndex, long endIndex) {
+        while (startIndex <= endIndex) {
+            bitCask.delete(getKey(startIndex++));
+        }
     }
 }

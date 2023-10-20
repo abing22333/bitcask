@@ -1,87 +1,54 @@
 package com.abing.raft.server;
 
-import com.abing.raft.server.entity.*;
-import com.abing.raft.server.state.RaftNode;
-import com.abing.raft.server.state.Rule;
-import lombok.Data;
+import com.abing.raft.client.KvArgument;
+import com.abing.raft.client.KvResult;
+import com.abing.raft.client.ServerInfos;
+import com.abing.raft.server.entity.AppendEntryArgument;
+import com.abing.raft.server.entity.AppendEntryResult;
+import com.abing.raft.server.entity.RequestVoteArgument;
+import com.abing.raft.server.entity.RequestVoteResult;
+import com.abing.raft.server.impl.DefalutlRaft;
+import com.abing.raft.server.state.RuleStrategy;
 
-import java.text.MessageFormat;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
- * 服务器节点
+ * Raft算法
  *
  * @author abing
  * @date 2023/10/10
  */
-@Data
-public class Raft {
-    static Logger log = Logger.getLogger(Raft.class.getName());
 
-    RaftNode raftNode;
+public interface Raft {
+    Logger log = Logger.getLogger(Raft.class.getName());
 
-    MachineInfos machineInfos;
+    /**
+     * 场景raft
+     * @param arg
+     * @return
+     */
 
+    static Raft createRaft(String arg) {
+        ServerInfos serverInfos = ServerInfos.createServerInfos(arg);
+        DefalutlRaft defalutlRaft = new DefalutlRaft(serverInfos);
+        defalutlRaft.setRule(RuleStrategy.FOLLOWER);
 
-    public Raft(String arg) {
-        machineInfos = MachineInfos.createMachineInfos(arg);
-        raftNode = new RaftNode(machineInfos);
-        raftNode.setRule(Rule.FOLLOWER);
-        init();
-    }
-
-    ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-    void init() {
-        executorService.submit(new NodeRuleCheck());
-    }
-
-    public AppendEntryResult appendEntry(AppendEntryArgument appendEntry) {
-        log.info(MessageFormat.format("{0}  receive appendEntry: [{1}]", raftNode.getNodeInfo(), appendEntry.toString()));
-        AppendEntryResult result = raftNode.appendEntry(appendEntry);
-        log.info(MessageFormat.format("{0}  response appendEntry: [{1}]", raftNode.getNodeInfo(), result.toString()));
-        return result;
+        return defalutlRaft;
     }
 
 
-    public RequestVoteResult requestVote(RequestVoteArgument requestVote) {
-        log.info(MessageFormat.format("{0}  receive requestVote: [{1}]", raftNode.getNodeInfo(), requestVote.toString()));
-        RequestVoteResult result = raftNode.requestVote(requestVote);
-        log.info(MessageFormat.format("{0}  response requestVote: [{1}]", raftNode.getNodeInfo(), result.toString()));
-        return result;
-    }
+    AppendEntryResult appendEntry(AppendEntryArgument appendEntry);
+
+    RequestVoteResult requestVote(RequestVoteArgument requestVote);
 
 
-    public KvResult<?> kv(KvArgument argument) {
-        // todo
-        return new KvResult<>();
-    }
+    KvResult<?> clientKv(KvArgument<?> argument);
 
-    public class NodeRuleCheck implements Runnable {
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    log.info(MessageFormat.format("{0}[{1}] ", raftNode.getNodeInfo(), raftNode.getRule().display()));
+    void setRule(RuleStrategy rule);
 
-                    raftNode.doSameThing();
+    int getPort();
 
-                    log.info(MessageFormat.format("{0} change rule to [{1}]", raftNode.getNodeInfo(), raftNode.nextRule.display()));
+    String getNodeDesc();
 
-                    // 设置新角色
-                    raftNode.setRule(raftNode.nextRule);
-                } catch (Exception e) {
-                    log.warning(MessageFormat.format("{0}[{1}] error ", raftNode.getNodeInfo(), raftNode.getRule().display()));
-                    e.printStackTrace();
-                    break;
-                }
-            }
-        }
-    }
-
-    public int getPort() {
-        return machineInfos.getSelf().getPort();
-    }
+    void start();
 }

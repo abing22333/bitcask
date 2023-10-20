@@ -8,7 +8,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>kv-common</module>
         <module>kv-bitcask</module>
         <module>raft-client</module>
         <module>raft-server</module>

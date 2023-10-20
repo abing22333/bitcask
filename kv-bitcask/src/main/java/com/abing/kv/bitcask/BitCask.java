@@ -1,8 +1,6 @@
 package com.abing.kv.bitcask;
 
 
-import com.abing.kv.common.api.KvDataBase;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -54,6 +52,9 @@ public class BitCask implements KvDataBase {
         if (index == null) {
             return null;
         }
+        if (index.isDelete()) {
+            return null;
+        }
         try (FileChannel readChannel = getReadChannel(FILE_NAME)) {
             readChannel.position(index.getValuePosition());
 
@@ -99,6 +100,17 @@ public class BitCask implements KvDataBase {
      */
     @Override
     public void delete(String key) {
+        if (!hasKey(key)) {
+            // 如果数据库不存在某个数据，不需要删除
+            return;
+        }
         put(key, new byte[0]);
+    }
+
+    @Override
+    public boolean hasKey(String key) {
+        Index index = keyDir.get(key);
+
+        return index != null && !index.isDelete();
     }
 }

@@ -1,5 +1,7 @@
 package com.abing.raft.server.entity;
 
+import com.abing.raft.client.KvArgument;
+import com.abing.raft.client.SerializationUtil;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -24,6 +26,11 @@ public class LogEntry implements Serializable {
     long index;
 
     /**
+     * 指令的类型
+     */
+    Integer command;
+
+    /**
      * 需要执行指令的key
      */
     String key;
@@ -33,8 +40,19 @@ public class LogEntry implements Serializable {
      */
     byte[] value;
 
-   public boolean lessOrEqual(long term, long index) {
+    public boolean lessOrEqual(long term, long index) {
 
         return this.term <= term && this.index <= index;
+    }
+
+
+    public static LogEntry createFrom(KvArgument<?> kvArgument, long term, long index) {
+        LogEntry logEntry = new LogEntry();
+        logEntry.setTerm(term);
+        logEntry.setIndex(index);
+        logEntry.setCommand(kvArgument.getCommand());
+        logEntry.setKey(kvArgument.getKey());
+        logEntry.setValue(SerializationUtil.serialize(kvArgument.getValue()));
+        return logEntry;
     }
 }

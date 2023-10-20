@@ -1,10 +1,11 @@
 package com.abing.raft.server.state;
 
 
-import com.abing.raft.server.MachineInfos;
+import com.abing.raft.client.ServerInfos;
 import com.abing.raft.server.entity.LogEntry;
 import com.abing.raft.server.entity.RequestVoteArgument;
 import com.abing.raft.server.entity.RequestVoteResult;
+import com.abing.raft.server.impl.DefalutlRaft;
 
 import java.text.MessageFormat;
 import java.util.Collection;
@@ -18,9 +19,9 @@ import java.util.logging.Logger;
  * @author abing
  * @date 2023/10/10
  */
-public class CandidateRaft extends NodeRule {
+public class CandidateStrategy extends RuleStrategy {
 
-    static Logger log = Logger.getLogger(FollowerRaft.class.getName());
+    static Logger log = Logger.getLogger(FollowerStrategy.class.getName());
 
     /**
      * 上次时间戳
@@ -50,9 +51,9 @@ public class CandidateRaft extends NodeRule {
             }
 
             if (isTimeOut()) {
-                log.info(MessageFormat.format("{0}[Candidate] 开始选举", raftNode.getId()));
-                raftNode.currentTerm++;
-                raftNode.votedFor = raftNode.machineInfos.getSelf().getId();
+                log.info(MessageFormat.format("{0}[Candidate] 开始选举", defalutlRaft.getId()));
+                defalutlRaft.incrCurrentTerm();
+                defalutlRaft.votedForSelf();
                 sendSet.clear();
             }
 
@@ -62,8 +63,8 @@ public class CandidateRaft extends NodeRule {
     }
 
     @Override
-    public void bind(RaftNode raftNode) {
-        super.bind(raftNode);
+    public void bind(DefalutlRaft defalutlRaft) {
+        super.bind(defalutlRaft);
         this.lastElectTime = -1;
     }
 
@@ -85,12 +86,12 @@ public class CandidateRaft extends NodeRule {
      */
     public void sendRequestVote() {
 
-        MachineInfos.MachineInfo self = raftNode.machineInfos.getSelf();
-        Collection<MachineInfos.MachineInfo> otherNodeList = raftNode.machineInfos.getOtherNodeInfo();
+        ServerInfos.ServerInfo self = defalutlRaft.getServerInfos().getSelf();
+        Collection<ServerInfos.ServerInfo> otherNodeList = defalutlRaft.getServerInfos().getOtherNodeInfo();
 
         long lastLogTerm = 0;
         long lastLogIndex = 0;
-        LogEntry lastLogEntry = raftNode.logModule.getLast();
+        LogEntry lastLogEntry = defalutlRaft.getLast();
 
         if (lastLogEntry != null) {
             lastLogTerm = lastLogEntry.getTerm();
@@ -99,41 +100,40 @@ public class CandidateRaft extends NodeRule {
 
         RequestVoteArgument requestVote = RequestVoteArgument.builder()
                 .withCandidateId(self.getId())
-                .withTerm(raftNode.currentTerm)
+                .withTerm(defalutlRaft.getCurrentTerm())
                 .withLastLogIndex(lastLogIndex)
                 .withLastLogTerm(lastLogTerm)
                 .build();
 
         int count = 1, total = otherNodeList.size() + 1;
 
-        for (MachineInfos.MachineInfo machineInfo : otherNodeList) {
+        for (ServerInfos.ServerInfo serverInfo : otherNodeList) {
             if (isStop) {
                 return;
             }
 
-            if (sendSet.contains(machineInfo.getId())) {
+            if (sendSet.contains(serverInfo.getId())) {
                 return;
             }
             try {
-                log.info(MessageFormat.format("{0} send requestVote to [{1}]  [{2}]", raftNode.getNodeInfo(), machineInfo, requestVote));
-                RequestVoteResult voteResult = raftNode.rpcServer.requestVote(requestVote, machineInfo);
-                log.info(MessageFormat.format("{0} receive requestVote from [{1}]  [{2}]", raftNode.getNodeInfo(), machineInfo, voteResult));
+
+                RequestVoteResult voteResult = defalutlRaft.getRpcServer().requestVote(requestVote, serverInfo);
 
                 // 接收到的 RPC 请求或响应，需要检查任期
-                raftNode.checkTerm(voteResult.getTerm());
+                defalutlRaft.checkTerm(voteResult.getTerm());
 
                 if (voteResult.getVoteGranted()) {
                     count++;
                 }
 
-                log.info(MessageFormat.format("{0} count: {1}", raftNode.getNodeInfo(), count));
+                log.info(MessageFormat.format("{0} count: {1}", defalutlRaft.getNodeDesc(), count));
                 // 获得大多数投票
                 if (count >= total / 2 + 1) {
                     // 切换到领导者状态
-                    tryChangeRule(Rule.LEADER);
+                    tryChangeRule(RuleStrategy.LEADER);
                 }
 
-                sendSet.add(machineInfo.getId());
+                sendSet.add(serverInfo.getId());
             } catch (Exception e) {
                 log.info(e.getMessage());
             }

@@ -1,4 +1,4 @@
-package com.abing.kv.common.api;
+package com.abing.kv.bitcask;
 
 /**
  * kv数据库接口
@@ -30,4 +30,12 @@ public interface KvDataBase {
      * @param key key
      */
     void delete(String key);
+
+    /**
+     * 数据中是否存在key
+     * @param key key
+     * @return boolean
+     */
+    boolean hasKey(String key);
+
 }

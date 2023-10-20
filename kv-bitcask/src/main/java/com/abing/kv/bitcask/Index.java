@@ -68,7 +68,14 @@ public class Index {
         return this;
     }
 
-
+    /**
+     * 是否删除标识
+     *
+     * @return boolean
+     */
+    public boolean isDelete() {
+        return valueSize != 0;
+    }
 
     public static Index from(Record record, long filePosition) {
         Index index = new Index();

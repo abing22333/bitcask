@@ -1,18 +1,17 @@
 package com.abing.raft.server.rpc;
 
-import com.abing.kv.common.util.SerializationUtil;
-import com.abing.raft.server.MachineInfos;
+import com.abing.raft.client.BaseClient;
+import com.abing.raft.client.ServerInfos;
+import com.abing.raft.server.constant.ApiPath;
 import com.abing.raft.server.entity.AppendEntryArgument;
 import com.abing.raft.server.entity.AppendEntryResult;
 import com.abing.raft.server.entity.RequestVoteArgument;
 import com.abing.raft.server.entity.RequestVoteResult;
-import com.abing.raft.server.state.RaftNode;
+import com.abing.raft.server.impl.DefalutlRaft;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.text.MessageFormat;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
@@ -20,72 +19,57 @@ import java.util.logging.Logger;
  * @author abing
  * @date 2023/10/11
  */
-public class HttpRpcServer implements RpcServer {
+public class HttpRpcServer extends BaseClient implements RpcServer {
 
-    static Logger log = Logger.getLogger(RaftNode.class.getName());
+    static Logger log = Logger.getLogger(HttpRpcServer.class.getName());
+    private final DefalutlRaft defalutlRaft;
 
-    HttpClient httpClient;
-
-    {
-        httpClient = HttpClient.newBuilder()
-                .executor(Executors.newFixedThreadPool(10))
+    public HttpRpcServer(DefalutlRaft defalutlRaft) {
+        this.defalutlRaft = defalutlRaft;
+        this.httpClient = HttpClient.newBuilder()
+                .executor(Executors.newFixedThreadPool(defalutlRaft.getServerInfos().nodeSize()))
                 .build();
     }
 
+
     @Override
-    public AppendEntryResult appendEntry(AppendEntryArgument appendEntry, MachineInfos.MachineInfo machineInfo) {
-        byte[] serialize = SerializationUtil.serialize(appendEntry);
+    public AppendEntryResult appendEntry(AppendEntryArgument appendEntry, ServerInfos.ServerInfo serverInfo) {
+        AppendEntryResult result;
+
+        log.info(MessageFormat.format("{0}  send appendEntry: [{1}]", defalutlRaft.getNodeDesc(), appendEntry.toString()));
         try {
-            HttpResponse<byte[]> response = post(machineInfo.getAddr(), "/appendEntry", serialize);
-
-            return SerializationUtil.deserialize(response.body());
-        } catch (IOException | InterruptedException e) {
-
+            result = post(serverInfo.getAddr(), ApiPath.APPEND_ENTRY, appendEntry);
+        } catch (IOException e) {
+            result = AppendEntryResult.fail(0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return AppendEntryResult.fail(0);
+
+        log.info(MessageFormat.format("{0}  receive appendEntry: [{1}]", defalutlRaft.getNodeDesc(), result.toString()));
+
+        return result;
     }
 
     @Override
-    public RequestVoteResult requestVote(RequestVoteArgument requestVote, MachineInfos.MachineInfo machineInfo) {
-
+    public RequestVoteResult requestVote(RequestVoteArgument requestVote, ServerInfos.ServerInfo serverInfo) {
         RequestVoteResult voteResult;
 
+        log.info(MessageFormat.format("{0} send requestVote to [{1}]  [{2}]", defalutlRaft.getNodeDesc(), serverInfo, requestVote));
         try {
-            byte[] serialize = SerializationUtil.serialize(requestVote);
-            HttpResponse<byte[]> response = post(machineInfo.getAddr(), "/requestVote", serialize);
-            voteResult = SerializationUtil.deserialize(response.body());
+            voteResult = post(serverInfo.getAddr(), ApiPath.REQUEST_VOTE, requestVote);
         } catch (IOException e) {
             voteResult = RequestVoteResult.disapprove(0);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        log.info(MessageFormat.format("{0} receive requestVote from [{1}]  [{2}]", defalutlRaft.getNodeDesc(), serverInfo, voteResult));
 
         return voteResult;
     }
 
     @Override
-    public RequestVoteResult sysnrequestVote(RequestVoteArgument requestVote, MachineInfos.MachineInfo machineInfo) {
+    public RequestVoteResult sysnrequestVote(RequestVoteArgument requestVote, ServerInfos.ServerInfo serverInfo) {
         return null;
-    }
-
-    private HttpResponse<byte[]> post(String host, String path, byte[] value) throws IOException, InterruptedException {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s%s", host, path)))
-                .POST(HttpRequest.BodyPublishers.ofByteArray(value))
-                .build();
-
-        HttpResponse<byte[]> response;
-
-        response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-
-
-        return response;
     }
 
 

@@ -1,71 +1,85 @@
-package com.abing.raft.server;
+package com.abing.raft.client;
 
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
- * 机器信息
+ * 维护其他节点信息
  *
  * @author abing
  * @date 2023/10/11
  */
+public class ServerInfos {
 
-public class MachineInfos {
-
+    Map<Integer, ServerInfo> numNodeMap = new HashMap<>();
 
     /**
      * 地址： ip:port
      */
-    Map<String, MachineInfo> otherNodeList = new HashMap<>();
+    Map<String, ServerInfo> idNodeMap = new HashMap<>();
 
     /**
      * 领导地址
      */
-    MachineInfo leader;
+    ServerInfo leader;
 
     /**
      * 自己的地址
      */
-    MachineInfo self;
+    ServerInfo self;
 
-    public MachineInfos(MachineInfo self) {
+    public ServerInfos(ServerInfo self) {
         this.self = self;
     }
 
-    public Collection<MachineInfo> getOtherNodeInfo() {
-        return otherNodeList.values();
+    public Collection<ServerInfo> getOtherNodeInfo() {
+        return Collections.unmodifiableCollection(idNodeMap.values());
     }
 
-    public MachineInfo getLeader() {
+    public ServerInfo getLeader() {
         return leader;
     }
 
-    public void add(MachineInfo machineInfo) {
-        otherNodeList.put(machineInfo.getId(), machineInfo);
+    public void add(ServerInfo serverInfo) {
+        idNodeMap.put(serverInfo.getId(), serverInfo);
+        numNodeMap.put(idNodeMap.size(), serverInfo);
     }
 
-    public void changeLeader(String id) {
-
-        // todo changeLeader
+    public int nodeSize(){
+        return idNodeMap.size();
     }
 
-    public MachineInfo getSelf() {
+    private int nextNodeIndex;
+
+    /**
+     * 下一个节点的信息
+     *
+     * @return MachineInfo
+     */
+    public ServerInfo nextMachineInfo() {
+        ServerInfo serverInfo = numNodeMap.get(nextNodeIndex);
+        nextNodeIndex = (nextNodeIndex + 1) % numNodeMap.size();
+        return serverInfo;
+    }
+
+    public void setLeader(String id) {
+        leader = idNodeMap.get(id);
+    }
+
+    public ServerInfo getSelf() {
         return self;
     }
 
     @Override
     public String toString() {
         return "MachineInfos{" +
-               "otherNodeList=" + otherNodeList +
+               "idNodeMap=" + idNodeMap +
                ", leader=" + leader +
                ", self=" + self +
                '}';
     }
 
-    public static class MachineInfo {
+    public static class ServerInfo {
         /**
          * id
          */
@@ -78,7 +92,7 @@ public class MachineInfos {
         /**
          * @param str id@ip:port
          */
-        public MachineInfo(String str) {
+        public ServerInfo(String str) {
 
             String[] infos = str.split("@");
             if (infos.length < 2) {
@@ -97,7 +111,7 @@ public class MachineInfos {
             }
         }
 
-        public MachineInfo(String id, String addr) {
+        public ServerInfo(String id, String addr) {
             this(id + "@" + addr);
         }
 
@@ -125,7 +139,7 @@ public class MachineInfos {
     }
 
 
-    public static MachineInfos createMachineInfos(String str) {
+    public static ServerInfos createServerInfos(String str) {
         if (str == null) {
             throw new RuntimeException("地址异常");
         }
@@ -134,12 +148,12 @@ public class MachineInfos {
         if (addrArray.length < 2) {
             throw new RuntimeException("地址异常");
         }
-        MachineInfos machineInfos = new MachineInfos(new MachineInfo(addrArray[0]));
+        ServerInfos serverInfos = new ServerInfos(new ServerInfo(addrArray[0]));
 
         Arrays.stream(addrArray).skip(1)
-                .forEach(addr -> machineInfos.add(new MachineInfo(addr)));
+                .forEach(addr -> serverInfos.add(new ServerInfo(addr)));
 
-        return machineInfos;
+        return serverInfos;
     }
 
 }

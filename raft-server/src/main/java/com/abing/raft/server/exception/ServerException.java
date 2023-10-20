@@ -1,4 +1,4 @@
-package com.abing.kv.common.exception;
+package com.abing.raft.server.exception;
 
 /**
  * @author abing

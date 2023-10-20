@@ -1,4 +1,4 @@
-package com.abing.kv.common.util;
+package com.abing.raft.client;
 
 import java.io.*;
 

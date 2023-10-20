@@ -44,7 +44,7 @@ public class AppendEntryArgument implements Serializable {
     public static final class AppendEntryArgumentBuilder {
         private long term;
         private String leaderId;
-        private long prevLogIndex;
+        private long preLogIndex;
         private long preLogTerm;
         private List<LogEntry> entries;
         private long leaderCommit;
@@ -67,7 +67,7 @@ public class AppendEntryArgument implements Serializable {
         }
 
         public AppendEntryArgumentBuilder withPrevLogIndex(long prevLogIndex) {
-            this.prevLogIndex = prevLogIndex;
+            this.preLogIndex = prevLogIndex;
             return this;
         }
 
@@ -90,7 +90,7 @@ public class AppendEntryArgument implements Serializable {
             AppendEntryArgument appendEntryArgument = new AppendEntryArgument();
             appendEntryArgument.setTerm(term);
             appendEntryArgument.setLeaderId(leaderId);
-            appendEntryArgument.setPrevLogIndex(prevLogIndex);
+            appendEntryArgument.setPrevLogIndex(preLogIndex);
             appendEntryArgument.setPreLogTerm(preLogTerm);
             appendEntryArgument.setEntries(entries);
             appendEntryArgument.setLeaderCommit(leaderCommit);
